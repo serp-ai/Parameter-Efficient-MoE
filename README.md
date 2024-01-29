@@ -1,3 +1,10 @@
+This fork introduces mistral support (aka `sparsetral`)
+
+- (1/28/2024) Add vLLM support ([forked repo with sparsetral support](https://github.com/serp-ai/vllm))
+- (1/28/2024) Sparsetral (16 experts, top_k 4) trained with slim-orca for 1 epoch with an effective batch size of 32 at 4096 seq_len is currently finishing training and coming soon!
+
+# Original README
+---
 # Parameter-Efficient Sparsity Crafting From Dense to Mixture-of-Experts for Instruction Tuning on General Tasks
 
 <a href="https://github.com/wuhy68/Parameter-Efficient-MoE/blob/master/LICENSE">
