@@ -39,6 +39,9 @@ from peft.tuners.lora import LoraLayer
 from camelidae.configuration_camelidae import CamelidaeConfig
 from camelidae.modeling_camelidae import LlamaForCausalLM
 
+from sparsetral.configuration_sparsetral import SparsetralConfig
+from sparsetral.modeling_sparsetral import MistralForCausalLM
+
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -148,6 +151,7 @@ class SupervisedDataset(Dataset):
         self.sources = []
         self.targets = []
 
+        # pylint: disable-next=consider-using-enumerate
         for idx in range(len(data_list)):
             data = data_list[idx]
             corpus = data["corpus"]
@@ -162,11 +166,8 @@ class SupervisedDataset(Dataset):
                 # instruction mode
                 instruction = data["instruction"]
                 conversation = data["conversation"]
+                source = f"{tokenizer.bos_token}### System:\n{instruction}\n"
                 if len(conversation) == 1:
-                    if instruction == "":
-                        source = f"{tokenizer.bos_token}"
-                    else:
-                        source = f"{tokenizer.bos_token}### System:\n{instruction}\n"
                     source += (
                         f"### Human:\n{conversation[0]['input']}\n### Assistant:\n"
                     )
@@ -175,8 +176,19 @@ class SupervisedDataset(Dataset):
                     target = f"{conversation[0]['output']}{tokenizer.eos_token}"
 
                     self.targets.append(target)
-                # else:
-                # dialog mode
+                else:
+                    # dialog mode
+                    for i, conv in enumerate(conversation):
+                        source += f"### Human:\n{conv['input']}\n### Assistant:\n"
+                        if i == len(conversation) - 1:
+                            break
+                        source += f"{conv['output']}\n"
+
+                    self.sources.append(source)
+
+                    target = f"{conversation[-1]['output']}{tokenizer.eos_token}"
+
+                    self.targets.append(target)
 
         del data_list
         gc.collect()
@@ -331,28 +343,47 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     training_args.ddp_find_unused_parameters = False
-    set_seed(42)
+    set_seed(741)
 
-    model_config = CamelidaeConfig.from_pretrained(model_args.model_name_or_path)
-    model_config.pretraining_tp = 1  ## without tensor parallelism rank
+    if "llama" in model_args.model_name_or_path:
+        model_config = CamelidaeConfig.from_pretrained(model_args.model_name_or_path)
+        model_config.pretraining_tp = 1  ## without tensor parallelism rank
 
-    # Camelidae Config
-    model_config.moe_dtype = "bfloat16"
-    model_config.lora_r = 64
-    model_config.lora_alpha = 16
-    model_config.adapter_dim = 64
-    model_config.topk = 2
-    model_config.moe_scaling = 1
-    model_config.num_experts = 8
-    model_config.output_router_logits = False
+        # Camelidae Config
+        model_config.moe_dtype = "bfloat16"
+        model_config.lora_r = 64
+        model_config.lora_alpha = 16
+        model_config.adapter_dim = 64
+        model_config.topk = 2
+        model_config.moe_scaling = 1
+        model_config.num_experts = 8
+        model_config.output_router_logits = False
 
-    # # Seq Length Extension
-    # model_config.rope_scaling = {
-    #     "type": "dynamic",
-    #     "factor": 2,
-    # }
+        # # Seq Length Extension
+        # model_config.rope_scaling = {
+        #     "type": "dynamic",
+        #     "factor": 2,
+        # }
 
-    model = LlamaForCausalLM.from_pretrained(
+        model_class = LlamaForCausalLM
+    elif "mistral" in model_args.model_name_or_path:
+        model_config = SparsetralConfig.from_pretrained(model_args.model_name_or_path)
+
+        # Sparsetral Config
+        model_config.moe_dtype = "bfloat16"
+        model_config.lora_r = 64
+        model_config.lora_alpha = 16
+        model_config.adapter_dim = 64
+        model_config.topk = 4
+        model_config.moe_scaling = 1
+        model_config.num_experts = 16
+        model_config.output_router_logits = True
+
+        model_class = MistralForCausalLM
+    else:
+        raise ValueError("model not supported")
+
+    model = model_class.from_pretrained(
         model_args.model_name_or_path,
         config=model_config,
         cache_dir=training_args.cache_dir,
