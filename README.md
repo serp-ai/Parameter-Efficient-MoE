@@ -1,5 +1,6 @@
 This fork introduces mistral support (aka `sparsetral`)
 
+- (1/29/2024) [v1 sparsetral is on huggingface!](https://huggingface.co/serpdotai/sparsetral-16x7B-v1)
 - (1/28/2024) Add vLLM support ([forked repo with sparsetral support](https://github.com/serp-ai/vllm))
 - (1/28/2024) Sparsetral (16 experts, top_k 4) trained with slim-orca for 1 epoch with an effective batch size of 32 at 4096 seq_len is currently finishing training and coming soon!
 
