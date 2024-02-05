@@ -105,7 +105,7 @@ class SparsetralConfig(PretrainedConfig):
         num_attention_heads=32,
         num_key_value_heads=8,
         hidden_act="silu",
-        max_position_embeddings=4096 * 32,
+        max_position_embeddings=32768,
         initializer_range=0.02,
         rms_norm_eps=1e-6,
         use_cache=True,
@@ -121,7 +121,9 @@ class SparsetralConfig(PretrainedConfig):
         num_experts=16,
         topk=4,
         output_router_logits=False,
-        adapter_dim=64,
+        adapter_dim=512,
+        adapter_dropout=0.0,
+        router_aux_loss_coef=0.01,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -151,6 +153,8 @@ class SparsetralConfig(PretrainedConfig):
         self.output_router_logits = output_router_logits
 
         self.adapter_dim = adapter_dim
+        self.adapter_dropout = adapter_dropout
+        self.router_aux_loss_coef = router_aux_loss_coef
 
         super().__init__(
             pad_token_id=pad_token_id,

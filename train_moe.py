@@ -373,7 +373,7 @@ def train():
         model_config.moe_dtype = "bfloat16"
         model_config.lora_r = 64
         model_config.lora_alpha = 16
-        model_config.adapter_dim = 64
+        model_config.adapter_dim = 512
         model_config.topk = 4
         model_config.moe_scaling = 1
         model_config.num_experts = 16

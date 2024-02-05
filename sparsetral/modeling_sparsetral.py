@@ -51,7 +51,7 @@ from transformers.utils import (
     replace_return_docstrings,
     ModelOutput,
 )
-from sparsetral.configuration_sparsetral import SparsetralConfig
+from .configuration_sparsetral import SparsetralConfig
 
 
 if is_flash_attn_2_available():
@@ -266,7 +266,7 @@ class ParallelAdapterMLP(nn.Module):
         self.adapter_up = nn.Linear(adapter_dim, self.hidden_size, bias=False)
         self.adapter_act = nn.GELU()
 
-        self.adapter_dropout = nn.Dropout(p=0.1)
+        self.adapter_dropout = nn.Dropout(p=config.adapter_dropout)
         self.adapter_scaling = adapter_scaling
 
     def forward(self, x):
@@ -1552,7 +1552,7 @@ class MistralForCausalLM(MistralPreTrainedModel):
                 self.config.topk,
             )
             if labels is not None:
-                loss += 0.01 * aux_loss
+                loss += self.config.router_aux_loss_coef * aux_loss
 
         if not return_dict:
             output = (logits,) + outputs[1:]
