@@ -383,6 +383,8 @@ class LlamaMLP(nn.Module):
         )
         self.act_fn = ACT2FN[config.hidden_act]
 
+        self.moe_adapter = CamelidaeGateAdapter(config)
+
     def forward(self, x):
         router_hidden_states = x
         up_proj = self.act_fn(self.gate_proj(x)) * self.up_proj(x)
